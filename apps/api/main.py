@@ -33,7 +33,7 @@ app = FastAPI(
     title="AgentForge API",
     description="AI Solutions Architect backend powering LangGraph architecture generation",
     version="1.0.0",
-    docs_url="/docs" if settings.APP_ENV == "development" else None,
+    docs_url="/docs",
     redoc_url=None,
     lifespan=lifespan,
 )
@@ -59,7 +59,8 @@ async def health_check():
         "status": "ok", 
         "version": "1.0.0", 
         "service": "AgentForge API",
-        "env": settings.APP_ENV
+        "env": settings.APP_ENV,
+        "cors_origins": settings.get_cors_origins()
     }
 
 if __name__ == "__main__":
