@@ -21,8 +21,16 @@ Thumbs.db
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
 apps/api/.env
+apps/api/.env.production
 apps/web/.env
+apps/web/.env.production
+
+# ── Deployment files with sensitive data ──
+DEPLOYMENT_GUIDE.md
+DEPLOYMENT_SUMMARY.md
+QUICK_DEPLOY.md
 
 # ── Python / Backend ──
 __pycache__/
@@ -60,3 +68,4 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+.env

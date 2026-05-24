@@ -1,0 +1,34 @@
+services:
+  # AgentForge API Service
+  - type: web
+    name: agentforge-api
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        sync: false
+      - key: NEON_JWT_SECRET
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: REDIS_URL
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: CORS_ORIGINS
+        value: '["https://agentforge.vercel.app","https://agentforge.app"]'
