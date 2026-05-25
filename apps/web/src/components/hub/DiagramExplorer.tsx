@@ -48,6 +48,7 @@ export const DiagramExplorer: React.FC<DiagramExplorerProps> = ({ mermaidCode })
 
     const renderDiagram = async () => {
       setRenderError(null);
+      setSvgHtml('');
       try {
         if (!containerRef.current) return;
         
@@ -124,7 +125,12 @@ export const DiagramExplorer: React.FC<DiagramExplorerProps> = ({ mermaidCode })
             <div 
               ref={containerRef}
               className="mermaid-render-container"
-              style={{ display: svgHtml ? 'block' : 'none' }}
+              style={{ 
+                visibility: svgHtml ? 'visible' : 'hidden',
+                position: svgHtml ? 'relative' : 'absolute',
+                top: svgHtml ? 'auto' : '-9999px',
+                left: svgHtml ? 'auto' : '-9999px'
+              }}
             />
           </>
         )}
