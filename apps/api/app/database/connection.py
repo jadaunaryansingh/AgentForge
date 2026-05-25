@@ -120,24 +120,22 @@ async def seed_database_patterns():
 
     async with AsyncSessionLocal() as session:
         try:
-            # Check if table already has rows
-            result = await session.execute(select(AgentPattern).limit(1))
-            if not result.scalar_one_or_none():
-                print("[AgentForge] Seeding agent design patterns into Neon PostgreSQL...")
-                for p in DEFAULT_PATTERNS:
-                    pattern = AgentPattern(
-                        id=uuid.uuid4(),
-                        pattern_name=p["pattern_name"],
-                        description=p["description"],
-                        ideal_use_cases=p["ideal_use_cases"],
-                        langgraph_structure=p["langgraph_structure"],
-                        template_code=p["template_code"]
-                    )
-                    session.add(pattern)
-                await session.commit()
-                print("[AgentForge] Seeding completed successfully.")
-            else:
-                print("[AgentForge] Agent design patterns table is already populated.")
+            from sqlalchemy import delete
+            # Overwrite/refresh patterns with the new, realistic agent definitions
+            print("[AgentForge] Refreshing agent design patterns in Neon PostgreSQL...")
+            await session.execute(delete(AgentPattern))
+            for p in DEFAULT_PATTERNS:
+                pattern = AgentPattern(
+                    id=uuid.uuid4(),
+                    pattern_name=p["pattern_name"],
+                    description=p["description"],
+                    ideal_use_cases=p["ideal_use_cases"],
+                    langgraph_structure=p["langgraph_structure"],
+                    template_code=p["template_code"]
+                )
+                session.add(pattern)
+            await session.commit()
+            print("[AgentForge] Seeding/Refresh completed successfully.")
         except Exception as e:
             print(f"[AgentForge] Seeding database error: {e}")
             await session.rollback()
