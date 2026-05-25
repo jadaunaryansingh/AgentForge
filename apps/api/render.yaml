@@ -31,4 +31,4 @@ services:
       - key: APP_ENV
         value: production
       - key: CORS_ORIGINS
-        value: '["https://agentforge.vercel.app","https://agentforge.app"]'
+        value: '["https://agentforge.vercel.app","https://agentforge.app","https://web-silk-six-36.vercel.app"]'

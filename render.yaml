@@ -19,3 +19,5 @@ services:
       - key: REDIS_URL
         sync: false
         value: redis://localhost:6379
+      - key: CORS_ORIGINS
+        value: '["https://agentforge.vercel.app","https://agentforge.app","https://web-silk-six-36.vercel.app"]'

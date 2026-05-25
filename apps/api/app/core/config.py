@@ -35,7 +35,13 @@ class Settings(BaseSettings):
 
     # App
     APP_ENV: str = "development"
-    CORS_ORIGINS: Union[str, List[str]] = ["http://localhost:3000"]
+    CORS_ORIGINS: Union[str, List[str]] = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "https://agentforge.vercel.app",
+        "https://agentforge.app",
+        "https://web-silk-six-36.vercel.app",
+    ]
 
     def get_cors_origins(self) -> List[str]:
         if isinstance(self.CORS_ORIGINS, str):
