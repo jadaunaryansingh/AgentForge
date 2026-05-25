@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from passlib.context import CryptContext
+import bcrypt
 from app.database.connection import get_db
 from app.database.models import User
 from app.schemas.auth import UserCreate, LoginRequest, TokenResponse, UserResponse
@@ -9,7 +9,22 @@ from app.core.security import create_access_token, get_current_user
 import uuid
 
 router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+class PasswordHasher:
+    @staticmethod
+    def hash(password: str) -> str:
+        return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    @staticmethod
+    def verify(password: str, hashed_password: str) -> bool:
+        try:
+            if not hashed_password:
+                return False
+            return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
+        except Exception:
+            return False
+
+pwd_context = PasswordHasher()
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
