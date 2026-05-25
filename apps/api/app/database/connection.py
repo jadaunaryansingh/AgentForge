@@ -81,40 +81,40 @@ async def seed_database_patterns():
             "description": "A single supervisor agent coordinates and delegates tasks to specialized worker agents, managing global state and routing.",
             "ideal_use_cases": ["Complex coding projects", "Multi-stage analytical workflows", "Task-oriented assistants"],
             "langgraph_structure": {
-                "nodes": ["supervisor", "worker_coder", "worker_tester", "worker_writer"],
-                "edges": ["supervisor -> worker_coder", "worker_coder -> worker_tester", "worker_tester -> supervisor"]
+                "nodes": ["systems_orchestration_supervisor", "lead_code_synthesizer", "automated_regression_tester"],
+                "edges": ["START -> systems_orchestration_supervisor", "systems_orchestration_supervisor -> lead_code_synthesizer", "systems_orchestration_supervisor -> automated_regression_tester", "lead_code_synthesizer -> systems_orchestration_supervisor", "automated_regression_tester -> systems_orchestration_supervisor", "systems_orchestration_supervisor -> END"]
             },
-            "template_code": "# Supervisor Pattern template"
+            "template_code": "# Systems Orchestration & Hashing Pipeline template"
         },
         {
             "pattern_name": "RAG Pipeline Flow",
             "description": "Extracts search queries, queries a database or search API, refines context, and synthesizes answers with high accuracy.",
             "ideal_use_cases": ["Question answering over docs", "Knowledge bases", "Customer support search"],
             "langgraph_structure": {
-                "nodes": ["query_generator", "retriever", "context_evaluator", "generator"],
-                "edges": ["query_generator -> retriever", "retriever -> context_evaluator", "context_evaluator -> generator"]
+                "nodes": ["semantic_query_deconstructor", "neon_vector_retriever", "contextual_relevance_router", "factual_synthesis_generator"],
+                "edges": ["START -> semantic_query_deconstructor", "semantic_query_deconstructor -> neon_vector_retriever", "neon_vector_retriever -> contextual_relevance_router", "contextual_relevance_router -> factual_synthesis_generator", "factual_synthesis_generator -> END"]
             },
-            "template_code": "# RAG Pipeline template"
+            "template_code": "# Context-Aware RAG Embeddings Pipeline template"
         },
         {
             "pattern_name": "Plan-and-Execute",
             "description": "A planning agent divides a complex task into discrete subtasks. Executing agents run subtasks sequentially, updating progress until completion.",
             "ideal_use_cases": ["Autonomous research agents", "Complex database reporting", "Long-running multi-step jobs"],
             "langgraph_structure": {
-                "nodes": ["planner", "executor", "replanner", "responder"],
-                "edges": ["planner -> executor", "executor -> replanner", "replanner -> executor", "replanner -> responder"]
+                "nodes": ["autonomous_task_planner", "parallel_subtask_executor", "dynamic_state_replanner", "executive_response_responder"],
+                "edges": ["START -> autonomous_task_planner", "autonomous_task_planner -> parallel_subtask_executor", "parallel_subtask_executor -> dynamic_state_replanner", "dynamic_state_replanner -> parallel_subtask_executor", "dynamic_state_replanner -> executive_response_responder", "executive_response_responder -> END"]
             },
-            "template_code": "# Plan-and-Execute template"
+            "template_code": "# Plan-and-Execute Autonomy Pipeline template"
         },
         {
             "pattern_name": "Evaluator-Optimizer (Reflection)",
             "description": "One agent creates a draft output, and another evaluates it against quality metrics, providing feedback for revision in a loop.",
             "ideal_use_cases": ["High-quality content writing", "Code generation with self-healing tests", "Translation refinement"],
             "langgraph_structure": {
-                "nodes": ["generator", "evaluator"],
-                "edges": ["generator -> evaluator", "evaluator -> generator", "evaluator -> END"]
+                "nodes": ["draft_content_generator", "quality_metrics_evaluator"],
+                "edges": ["START -> draft_content_generator", "draft_content_generator -> quality_metrics_evaluator", "quality_metrics_evaluator -> draft_content_generator", "quality_metrics_evaluator -> END"]
             },
-            "template_code": "# Evaluator-Optimizer template"
+            "template_code": "# Evaluator-Optimizer Review Loop template"
         }
     ]
 

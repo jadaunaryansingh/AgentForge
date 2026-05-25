@@ -136,87 +136,87 @@ async def search_patterns(requirements: dict, db: AsyncSession) -> list:
         return [STATIC_SUPERVISOR_PATTERN]
 
 def get_default_fallback_graph(requirements: dict, pattern: dict) -> dict:
-    """Generates a detailed dummy graph if Groq API is unavailable."""
+    """Generates a detailed, realistic graph if Groq API is unavailable."""
     nodes = []
     edges = []
     
     if "rag" in pattern["pattern_name"].lower():
         nodes = [
             {
-                "id": "semantic_query_analyzer",
-                "name": "Semantic Query Analyzer",
+                "id": "semantic_query_deconstructor",
+                "name": "Context-Aware Semantic Query Deconstructor",
                 "type": "agent",
                 "description": "Deconstructs incoming user prompts, resolves core intent, and generates structured vector search queries.",
-                "system_prompt": "You are a Semantic Query Analyzer Agent. Your primary role is to dissect user questions, separate keywords from logical context, and formulate optimal database queries to maximize information retrieval accuracy.",
+                "system_prompt": "You are the Context-Aware Semantic Query Deconstructor. Your role is to analyze incoming user questions, extract core semantic intents, and generate structured search parameters. Deconstruct complex queries into multiple distinct search terms to ensure high-recall vector search. Filter out conversational fillers, resolve pronominal references against global state history, and output clean search inputs. Adhere strictly to the state format and write parsed criteria to the search_queries field.",
                 "tools": []
             },
             {
                 "id": "neon_vector_retriever",
-                "name": "Neon SQL Context Retriever",
+                "name": "Neon PostgreSQL Vector Embeddings Retriever",
                 "type": "tool",
                 "description": "Queries Neon database tables using keyword matching and contextual filters.",
-                "system_prompt": "",
+                "system_prompt": "Executes high-performance cosine similarity vector lookup against Neon database tables. Retains chunk metadata, document references, and source titles to pass downstream for validation.",
                 "tools": ["sql_search"]
             },
             {
                 "id": "contextual_relevance_router",
-                "name": "Contextual Relevance Router",
+                "name": "Contextual Relevance & Quality Evaluator Router",
                 "type": "router",
                 "description": "Evaluates retrieved knowledge quality and dynamically routes to synthesis or query refinement.",
-                "system_prompt": "You are a Contextual Relevance Router. Analyze the retrieved context against the user question. If the information is sufficient to construct a factual answer, route to synthesis. Otherwise, route back for query refinement.",
+                "system_prompt": "You are the Contextual Relevance & Quality Evaluator Router. Review the list of retrieved document chunks against the user's original query. Your duty is to score the context's adequacy: if the retrieved data contains direct, sufficient factual information to answer the question, return 'sufficient' to route to synthesis. If there are critical gaps or the context is irrelevant, return 'insufficient' to trigger search query refinement. Analyze keyword alignment and semantic overlap before making your routing decision.",
                 "tools": []
             },
             {
-                "id": "fact_synthesis_generator",
-                "name": "Fact Synthesis Generator",
+                "id": "factual_synthesis_generator",
+                "name": "Hallucination-Free Fact Synthesis Generator",
                 "type": "agent",
                 "description": "Synthesizes final comprehensive answers strictly based on retrieved factual context.",
-                "system_prompt": "You are a Fact Synthesis Generator. Your task is to review the retrieved knowledge base documents and compile a coherent, technically precise response. Do not hallucinate any information outside the provided context.",
+                "system_prompt": "You are the Hallucination-Free Fact Synthesis Generator. Review the validated knowledge base documents and compile a coherent, technically precise response. You must rely strictly on the provided context; do not assume, extrapolate, or hallucinate facts not directly stated in the documents. If the documents do not contain the answer, explicitly state that the information is unavailable. Format the final output in clear Markdown with numbered citations mapping to source references.",
                 "tools": []
             }
         ]
         edges = [
-            {"source": "START", "target": "semantic_query_analyzer"},
-            {"source": "semantic_query_analyzer", "target": "neon_vector_retriever"},
+            {"source": "START", "target": "semantic_query_deconstructor"},
+            {"source": "semantic_query_deconstructor", "target": "neon_vector_retriever"},
             {"source": "neon_vector_retriever", "target": "contextual_relevance_router"},
-            {"source": "contextual_relevance_router", "target": "fact_synthesis_generator", "condition": "sufficient", "label": "Context Satisfied"},
-            {"source": "contextual_relevance_router", "target": "semantic_query_analyzer", "condition": "insufficient", "label": "Refining Queries"},
-            {"source": "fact_synthesis_generator", "target": "END"}
+            {"source": "contextual_relevance_router", "target": "factual_synthesis_generator", "condition": "sufficient", "label": "Context Satisfied"},
+            {"source": "contextual_relevance_router", "target": "semantic_query_deconstructor", "condition": "insufficient", "label": "Refining Queries"},
+            {"source": "factual_synthesis_generator", "target": "END"}
         ]
     else: # Supervisor Pattern default
         nodes = [
             {
-                "id": "orchestration_supervisor",
-                "name": "Orchestration Supervisor Agent",
+                "id": "systems_orchestration_supervisor",
+                "name": "Systems Orchestration & Delegation Supervisor",
                 "type": "router",
                 "description": "Manages global state, delegates coding and testing subtasks to specialized agents, and determines workflow termination.",
-                "system_prompt": "You are the Orchestration Supervisor. Your role is to coordinate a team of developer and tester agents. Review the state history, delegate tasks to the appropriate team members, and merge final results when all criteria are satisfied.",
+                "system_prompt": "You are the Systems Orchestration & Delegation Supervisor. Your role is to coordinate a team of specialized agents to deliver a verified software solution. Review the global state_schema history, identify outstanding tasks, and delegate them: if code is missing, route to lead_code_synthesizer; if code is written but unverified, route to automated_regression_tester; if tests have failed, route back to the coder with error logs. If all criteria are met and tests pass, route to END to finalize.",
                 "tools": []
             },
             {
-                "id": "lead_software_engineer",
-                "name": "Lead Software Engineer Agent",
+                "id": "lead_code_synthesizer",
+                "name": "Lead Code Synthesis & Optimization Engineer",
                 "type": "agent",
                 "description": "Synthesizes Python scripts and software architectures according to specifications.",
-                "system_prompt": "You are a Lead Software Engineer Agent. You write complete, highly optimized, and clean Python scripts conforming to pep8 standards based on task instructions received from the supervisor.",
+                "system_prompt": "You are the Lead Code Synthesis & Optimization Engineer. Write complete, highly optimized, and clean Python scripts conforming strictly to PEP8 standards and type hinting. Implement robust exception handling and follow structural guidelines provided in the systems specification. Do not write dummy placeholders or partial implementations. Return code wrapped in a standard markdown block and ensure it handles edge cases gracefully.",
                 "tools": ["terminal"]
             },
             {
-                "id": "automated_qa_test_runner",
-                "name": "Automated QA Test Runner Agent",
+                "id": "automated_regression_tester",
+                "name": "Automated QA & Regression Test Runner",
                 "type": "agent",
                 "description": "Executes testing suites, parses output logs, and evaluates test coverage metrics.",
-                "system_prompt": "You are an Automated QA Test Runner Agent. Your job is to construct robust test files, execute them in a mock validation environment, and return granular pass/fail statistics along with error tracebacks.",
+                "system_prompt": "You are the Automated QA & Regression Test Runner. Your task is to construct robust test files using the pytest framework based on the software specifications. Execute the test suite in a mock validation environment, parse execution logs, and capture full stdout/stderr stack traces. Return a granular list of pass/fail results and cover edge conditions. Populate the test_results state field with precise failure reasons if any tests fail.",
                 "tools": ["test_runner"]
             }
         ]
         edges = [
-            {"source": "START", "target": "orchestration_supervisor"},
-            {"source": "orchestration_supervisor", "target": "lead_software_engineer", "condition": "needs_code", "label": "Delegate Coding"},
-            {"source": "orchestration_supervisor", "target": "automated_qa_test_runner", "condition": "needs_test", "label": "Delegate Testing"},
-            {"source": "lead_software_engineer", "target": "orchestration_supervisor", "label": "Review Code Draft"},
-            {"source": "automated_qa_test_runner", "target": "orchestration_supervisor", "label": "Review Test Results"},
-            {"source": "orchestration_supervisor", "target": "END", "condition": "complete", "label": "Finalize Solution"}
+            {"source": "START", "target": "systems_orchestration_supervisor"},
+            {"source": "systems_orchestration_supervisor", "target": "lead_code_synthesizer", "condition": "needs_code", "label": "Delegate Coding"},
+            {"source": "systems_orchestration_supervisor", "target": "automated_regression_tester", "condition": "needs_test", "label": "Delegate Testing"},
+            {"source": "lead_code_synthesizer", "target": "systems_orchestration_supervisor", "label": "Review Code Draft"},
+            {"source": "automated_regression_tester", "target": "systems_orchestration_supervisor", "label": "Review Test Results"},
+            {"source": "systems_orchestration_supervisor", "target": "END", "condition": "complete", "label": "Finalize Solution"}
         ]
         
     return {

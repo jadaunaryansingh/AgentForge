@@ -96,11 +96,14 @@ export const NewProject: React.FC = () => {
                       <div className="textarea-help-overlay">
                         <p className="helper-label">Need inspiration?</p>
                         <ul className="helper-list">
-                          <li onClick={() => setPrompt("Build a code review pipeline: a Coder node writes python scripts, a Tester node runs unit tests using mock run environments, and a Reviewer node evaluates test results and directs revision loops.")}>
-                            Code reviewer with feedback loops
+                          <li onClick={() => setPrompt("Design a software engineering workflow consisting of: a Systems Analyst agent (systems_analyst) that writes functional specs, a Code Synthesis Engineer agent (code_synthesizer) that translates specs to complete python code, an Automated Test Runner agent (regression_tester) that writes unit tests and runs them, and a Quality Assurance Auditor agent (qa_auditor) that reviews test logs and either passes the build or routes it back to the synthesis engineer with detailed regression notes.")}>
+                            Software Engineering Workflow with QA loop
                           </li>
-                          <li onClick={() => setPrompt("Build a market analysis agent: an extraction node queries web search tools for stock stats, an analysis node computes metrics in parallel, and a reporter compiles charts.")}>
-                            Market research data aggregator
+                          <li onClick={() => setPrompt("Design a context-aware RAG pipeline consisting of: a Query Deconstructor agent (query_deconstructor) that transforms complex requests into sub-queries, a Vector DB Retriever node (vector_retriever) that extracts document chunks using Qdrant vector search tools, a Contextual Relevance Router node (relevance_router) that evaluates search results, and a Factual Synthesis Generator agent (synthesis_generator) that compiles a final answer and checks for hallucinations.")}>
+                            Dynamic RAG & Verification Pipeline
+                          </li>
+                          <li onClick={() => setPrompt("Design a financial research team consisting of: a Market Data Ingestion agent (market_data_ingestor) that queries stock history and financial news feeds via Yahoo Finance tools, a Quantitative Analyst agent (quantitative_analyst) that calculates statistical metrics and volatility thresholds, and an Executive Report Writer agent (report_writer) that synthesizes findings into a professional markdown report.")}>
+                            Financial Research & Analytics Team
                           </li>
                         </ul>
                       </div>
