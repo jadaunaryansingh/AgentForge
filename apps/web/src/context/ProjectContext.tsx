@@ -220,8 +220,8 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     let codeData: any = null;
 
     try {
-      // Use standard fetch response stream to transmit JWT token
-      const response = await fetch('http://localhost:8000/api/architect/stream', {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiBase.replace(/\/$/, '')}/api/architect/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
