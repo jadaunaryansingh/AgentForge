@@ -49,14 +49,20 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({ graph, selectedNodeId, o
     if (!graph || !graph.nodes) return;
 
     // 1. Map positions dynamically using simple grid column sorting
-    const flowNodes: Node[] = graph.nodes.map((n, index) => {
+    const flowNodes: Node[] = graph.nodes.map((n: any, index) => {
+      // Defensive fallback fields for legacy structures or strings
+      const id = typeof n === 'string' ? n : (n.id || `node-${index}`);
+      const name = typeof n === 'string' ? n : (n.name || n.id || `Node ${index}`);
+      const type = typeof n === 'string' ? 'agent' : (n.type || 'agent');
+      const description = typeof n === 'string' ? '' : (n.description || '');
+
       // Calculate column index based on node type
       let col = 1;
-      if (n.id === graph.entry_point || n.type === 'input') {
+      if (id === graph.entry_point || type === 'input') {
         col = 0;
-      } else if (n.type === 'tool') {
+      } else if (type === 'tool') {
         col = 2;
-      } else if (n.type === 'output') {
+      } else if (type === 'output') {
         col = 3;
       } else {
         // Distribute agents across columns
@@ -66,15 +72,20 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({ graph, selectedNodeId, o
       const row = Math.floor(index / 2);
       
       return {
-        id: n.id,
-        type: n.type === 'tool' ? 'toolNode' : 'agentNode',
+        id: id,
+        type: type === 'tool' ? 'toolNode' : 'agentNode',
         position: {
           x: 40 + col * 320,
           y: 80 + row * 220,
         },
         data: {
-          ...n,
-          is_active: selectedNodeId === n.id,
+          id,
+          name,
+          type,
+          description,
+          model_config_data: typeof n === 'string' ? {} : (n.model_config_data || n.model_config || {}),
+          tools: typeof n === 'string' ? [] : (n.tools || []),
+          is_active: selectedNodeId === id,
         },
       };
     });

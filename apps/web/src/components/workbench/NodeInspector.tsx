@@ -19,8 +19,8 @@ export const NodeInspector: React.FC<NodeInspectorProps> = ({ node, onClose, onU
   // Sync state when selected node changes
   useEffect(() => {
     if (node) {
-      setName(node.name);
-      setDesc(node.description);
+      setName(node.name || node.id || '');
+      setDesc(node.description || '');
       setSystemPrompt(node.system_prompt || '');
       setModel(node.model_config_data?.model || 'llama-3.3-70b-versatile');
       setTemp(node.model_config_data?.temperature ?? 0.1);

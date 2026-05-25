@@ -4,8 +4,9 @@ import { Wrench } from 'lucide-react';
 
 interface ToolNodeProps {
   data: {
-    name: string;
-    description: string;
+    id?: string;
+    name?: string;
+    description?: string;
     tools?: string[];
     is_active?: boolean;
   };
@@ -30,7 +31,7 @@ export const ToolNode: React.FC<ToolNodeProps> = ({ data }) => {
         </div>
         <div className="node-meta">
           <span className="node-type-label">Utility Tool</span>
-          <h4 className="node-title">{data.name}</h4>
+          <h4 className="node-title">{data.name || data.id || 'Unnamed Tool'}</h4>
         </div>
       </div>
 

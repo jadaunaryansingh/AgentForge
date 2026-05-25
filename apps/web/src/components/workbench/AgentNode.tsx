@@ -4,8 +4,9 @@ import { Bot, Cpu, Wrench } from 'lucide-react';
 
 interface AgentNodeProps {
   data: {
-    name: string;
-    description: string;
+    id?: string;
+    name?: string;
+    description?: string;
     model_config_data?: {
       model?: string;
       temperature?: number;
@@ -35,7 +36,7 @@ export const AgentNode: React.FC<AgentNodeProps> = ({ data }) => {
         </div>
         <div className="node-meta">
           <span className="node-type-label">Agent Core</span>
-          <h4 className="node-title">{data.name}</h4>
+          <h4 className="node-title">{data.name || data.id || 'Unnamed Agent'}</h4>
         </div>
       </div>
 

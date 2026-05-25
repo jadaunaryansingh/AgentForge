@@ -87,6 +87,24 @@ def generate_mermaid_programmatic(graph: dict) -> str:
 
     return "\n".join(lines)
 
+def sanitize_mermaid_code(code: str) -> str:
+    """Cleans Mermaid syntax errors, particularly around styling classes list with spaces."""
+    if not code:
+        return ""
+    lines = []
+    for line in code.split("\n"):
+        trimmed = line.strip()
+        # Fix class declarations with comma-spaces (e.g. class START, END style;)
+        if trimmed.startswith("class ") and not trimmed.startswith("classDef "):
+            parts = trimmed.split()
+            if len(parts) >= 3:
+                class_name = parts[-1]
+                nodes_str = "".join(parts[1:-1])
+                lines.append(f"    class {nodes_str} {class_name}")
+                continue
+        lines.append(line)
+    return "\n".join(lines)
+
 async def generate_mermaid_diagram(graph: dict) -> str:
     """Use Gemini to generate a beautiful Mermaid.js flowchart from graph JSON."""
     is_valid_key = settings.GEMINI_API_KEY and not settings.GEMINI_API_KEY.startswith("your_")
@@ -127,6 +145,10 @@ Include custom style class definitions to add futuristic high-tech colors:
 4. Slate style for Memory/Databases (e.g. fill:#1c1917, stroke:#a8a29e, color:#fff)
 5. Deep blue style for Start/End endpoints (e.g. fill:#0c4a6e, stroke:#38bdf8, color:#fff)
 
+CRITICAL PROMPT GUIDELINES FOR MERMAID:
+1. Always enclose node labels in double quotes inside the shapes, e.g. node_id["🤖 Label Name"].
+2. When applying style classes to nodes, do NOT list multiple nodes separated by commas with spaces (e.g. do NOT write 'class START, END start_end;'). Instead, apply the class to each node individually on its own line (e.g. write 'class START start_end;' and 'class END start_end;' on separate lines).
+
 Return ONLY the Mermaid code block. Do NOT surround it in markdown tags or comments. Just the raw code starting with 'flowchart LR'."""
 
     try:
@@ -139,9 +161,9 @@ Return ONLY the Mermaid code block. Do NOT surround it in markdown tags or comme
         # Remove any Markdown code fences if included
         match = re.search(r'```(?:mermaid)?\s*([\s\S]+?)```', text)
         if match:
-            return match.group(1).strip()
+            return sanitize_mermaid_code(match.group(1).strip())
         
-        return text.strip()
+        return sanitize_mermaid_code(text.strip())
     except Exception as e:
         logger.error(f"Failed to generate Mermaid diagram via Gemini: {e}. Compiling programmatically.")
         return generate_mermaid_programmatic(graph)

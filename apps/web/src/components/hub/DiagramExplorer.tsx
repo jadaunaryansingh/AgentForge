@@ -18,6 +18,26 @@ mermaid.initialize({
   }
 });
 
+const sanitizeMermaidCode = (code: string): string => {
+  if (!code) return '';
+  return code
+    .split('\n')
+    .map(line => {
+      const trimmed = line.trim();
+      // Fix class declarations with comma-spaces (e.g. class START, END style;)
+      if (trimmed.startsWith('class ') && !trimmed.startsWith('classDef ')) {
+        const parts = trimmed.split(/\s+/);
+        if (parts.length >= 3) {
+          const className = parts[parts.length - 1];
+          const nodesStr = parts.slice(1, parts.length - 1).join('');
+          return `    class ${nodesStr} ${className}`;
+        }
+      }
+      return line;
+    })
+    .join('\n');
+};
+
 export const DiagramExplorer: React.FC<DiagramExplorerProps> = ({ mermaidCode }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svgHtml, setSvgHtml] = useState<string>('');
@@ -29,17 +49,28 @@ export const DiagramExplorer: React.FC<DiagramExplorerProps> = ({ mermaidCode })
     const renderDiagram = async () => {
       setRenderError(null);
       try {
-        // Clear previous container contents
-        if (containerRef.current) {
-          containerRef.current.innerHTML = '';
-        }
-
-        // Standardize IDs for mermaid compile
-        const elementId = `mermaid-svg-${Math.floor(Math.random() * 10000)}`;
+        if (!containerRef.current) return;
         
-        // Generate SVG string
-        const { svg } = await mermaid.render(elementId, mermaidCode.trim());
-        setSvgHtml(svg);
+        // 1. Sanitize code
+        const sanitizedCode = sanitizeMermaidCode(mermaidCode);
+
+        // 2. Clear old contents and create new mermaid element
+        containerRef.current.innerHTML = '';
+        const child = document.createElement('div');
+        child.className = 'mermaid';
+        child.textContent = sanitizedCode.trim();
+        containerRef.current.appendChild(child);
+
+        // 3. Render using Mermaid DOM runner
+        await mermaid.run({
+          nodes: [child]
+        });
+
+        // 4. Capture outerHTML for SVG download compatibility
+        const svgElement = containerRef.current.querySelector('svg');
+        if (svgElement) {
+          setSvgHtml(svgElement.outerHTML);
+        }
       } catch (err: any) {
         console.error("Mermaid parsing error:", err);
         setRenderError(err.message || 'Failed to render flowchart structure');
@@ -82,16 +113,20 @@ export const DiagramExplorer: React.FC<DiagramExplorerProps> = ({ mermaidCode })
             <p className="error-desc">{renderError}</p>
             <pre className="raw-mermaid-box">{mermaidCode}</pre>
           </div>
-        ) : svgHtml ? (
-          <div 
-            className="mermaid-render-container"
-            dangerouslySetInnerHTML={{ __html: svgHtml }} 
-          />
         ) : (
-          <div className="diagram-loading-placeholder">
-            <span className="spinner-glow" />
-            <p>Compiling SVG visualizer...</p>
-          </div>
+          <>
+            {!svgHtml && (
+              <div className="diagram-loading-placeholder">
+                <span className="spinner-glow" />
+                <p>Compiling SVG visualizer...</p>
+              </div>
+            )}
+            <div 
+              ref={containerRef}
+              className="mermaid-render-container"
+              style={{ display: svgHtml ? 'block' : 'none' }}
+            />
+          </>
         )}
       </div>
     </div>
