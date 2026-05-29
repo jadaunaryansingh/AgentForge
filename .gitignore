@@ -46,7 +46,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# Python lib dirs (scoped — do NOT match frontend src/lib)
 lib64/
 parts/
 sdist/
