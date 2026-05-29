@@ -66,15 +66,16 @@ export const EdgeAnimated: React.FC<EdgeProps> = ({
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              background: '#090514',
+              background: '#ffffff',
               padding: '2px 8px',
-              borderRadius: '4px',
+              borderRadius: '6px',
               fontSize: '10px',
-              border: '1px solid #312e81',
-              color: '#a5b4fc',
-              boxShadow: '0 0 10px rgba(99, 102, 241, 0.2)',
+              border: '1.5px solid rgba(99, 102, 241, 0.2)',
+              color: '#4f46e5',
+              boxShadow: '0 2px 8px rgba(99, 102, 241, 0.15)',
               pointerEvents: 'all',
               userSelect: 'none',
+              fontWeight: 600,
             }}
             className="nodrag nopan"
           >

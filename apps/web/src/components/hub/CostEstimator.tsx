@@ -146,10 +146,15 @@ export const CostEstimator: React.FC<CostEstimatorProps> = ({ estimation }) => {
           <ResponsiveContainer width="100%" height={150}>
             <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 10, top: 5, bottom: 5 }}>
               <XAxis type="number" hide />
-              <YAxis dataKey="name" type="category" width={80} tickLine={false} axisLine={false} style={{ fontSize: '11px', fill: '#9ca3af' }} />
+              <YAxis dataKey="name" type="category" width={80} tickLine={false} axisLine={false} style={{ fontSize: '11px', fill: '#475569' }} />
               <Tooltip 
-                contentStyle={{ background: '#0c0a12', border: '1px solid #312e81', borderRadius: '4px' }}
-                itemStyle={{ color: '#fff', fontSize: '12px' }}
+                contentStyle={{ 
+                  background: '#ffffff', 
+                  border: '1.5px solid rgba(99,102,241,0.2)', 
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 16px rgba(99,102,241,0.12)'
+                }}
+                itemStyle={{ color: '#0f172a', fontSize: '12px' }}
                 labelStyle={{ display: 'none' }}
               />
               <Bar dataKey="value" radius={[0, 4, 4, 0]}>

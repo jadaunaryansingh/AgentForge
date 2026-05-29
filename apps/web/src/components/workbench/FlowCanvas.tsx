@@ -15,6 +15,7 @@ import '@xyflow/react/dist/style.css';
 import { GraphDefinition, NodeDefinition } from '../../context/ProjectContext';
 import { AgentNode } from './AgentNode';
 import { ToolNode } from './ToolNode';
+import { RouterNode } from './RouterNode';
 import { EdgeAnimated } from './EdgeAnimated';
 
 interface FlowCanvasProps {
@@ -29,6 +30,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({ graph, selectedNodeId, o
     () => ({
       agentNode: AgentNode,
       toolNode: ToolNode,
+      routerNode: RouterNode,
     }),
     []
   );
@@ -48,36 +50,49 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({ graph, selectedNodeId, o
   useEffect(() => {
     if (!graph || !graph.nodes) return;
 
-    // 1. Map positions dynamically using simple grid column sorting
-    const flowNodes: Node[] = graph.nodes.map((n: any, index) => {
-      // Defensive fallback fields for legacy structures or strings
+    // Column x-positions for a left-to-right flow layout
+    const COL_X: Record<number, number> = {
+      0: 40,    // START / entry
+      1: 360,   // primary agents / routers (left lane)
+      2: 680,   // secondary agents / routers (right lane)
+      3: 1000,  // tools
+      4: 1320,  // END / output
+    };
+    const COL_Y_STEP = 220;
+    const COL_Y_START = 80;
+    // Track how many nodes have been placed in each column
+    const colRowCount: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
+
+    const assignCol = (n: any, index: number): number => {
+      const id = typeof n === 'string' ? n : (n.id || '');
+      const type = (typeof n === 'string' ? 'agent' : (n.type || 'agent')).toLowerCase();
+      if (id === graph.entry_point || type === 'input') return 0;
+      if (type === 'output') return 4;
+      if (type === 'tool') return 3;
+      // Alternate primary vs secondary lane for agents/routers
+      return index % 2 === 0 ? 1 : 2;
+    };
+
+    const flowNodes: Node[] = graph.nodes.map((n: any, index: number) => {
       const id = typeof n === 'string' ? n : (n.id || `node-${index}`);
       const name = typeof n === 'string' ? n : (n.name || n.id || `Node ${index}`);
-      const type = typeof n === 'string' ? 'agent' : (n.type || 'agent');
+      const type = (typeof n === 'string' ? 'agent' : (n.type || 'agent')).toLowerCase();
       const description = typeof n === 'string' ? '' : (n.description || '');
 
-      // Calculate column index based on node type
-      let col = 1;
-      if (id === graph.entry_point || type === 'input') {
-        col = 0;
-      } else if (type === 'tool') {
-        col = 2;
-      } else if (type === 'output') {
-        col = 3;
-      } else {
-        // Distribute agents across columns
-        col = 1 + (index % 2);
-      }
+      const col = assignCol(n, index);
+      const row = colRowCount[col] ?? 0;
+      colRowCount[col] = row + 1;
 
-      const row = Math.floor(index / 2);
-      
+      const x = Number(COL_X[col] ?? 40);
+      const y = Number(COL_Y_START + row * COL_Y_STEP);
+
+      const flowType =
+        type === 'tool' ? 'toolNode' : type === 'router' ? 'routerNode' : 'agentNode';
+
       return {
-        id: id,
-        type: type === 'tool' ? 'toolNode' : 'agentNode',
-        position: {
-          x: 40 + col * 320,
-          y: 80 + row * 220,
-        },
+        id,
+        type: flowType,
+        position: { x, y },
         data: {
           id,
           name,
@@ -90,43 +105,49 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({ graph, selectedNodeId, o
       };
     });
 
-    // 2. Add structural START/END nodes if they are used as sources or targets
-    const edgeSources = new Set(graph.edges.map(e => e.source));
-    const edgeTargets = new Set(graph.edges.map(e => e.target));
+    // Add structural START/END nodes if referenced in edges
+    const edgeSources = new Set(graph.edges.map((e) => e.source));
+    const edgeTargets = new Set(graph.edges.map((e) => e.target));
 
     if (edgeSources.has('START')) {
+      const row = colRowCount[0] ?? 0;
+      colRowCount[0] = row + 1;
       flowNodes.push({
         id: 'START',
         type: 'agentNode',
-        position: { x: 30, y: 180 },
-        data: { name: 'Start', type: 'input', description: 'Flow Entry Point' }
+        position: { x: Number(COL_X[0]), y: Number(COL_Y_START + row * COL_Y_STEP) },
+        data: { name: 'Start', type: 'input', description: 'Flow Entry Point' },
       });
     }
 
     if (edgeTargets.has('END')) {
+      const row = colRowCount[4] ?? 0;
+      colRowCount[4] = row + 1;
       flowNodes.push({
         id: 'END',
         type: 'agentNode',
-        position: { x: 40 + 4 * 320, y: 180 },
-        data: { name: 'End', type: 'output', description: 'Flow Terminal' }
+        position: { x: Number(COL_X[4]), y: Number(COL_Y_START + row * COL_Y_STEP) },
+        data: { name: 'End', type: 'output', description: 'Flow Terminal' },
       });
     }
 
-    // 3. Map edges
-    const flowEdges: Edge[] = graph.edges.map((e, idx) => ({
-      id: `edge-${e.source}-${e.target}-${idx}`,
-      source: e.source,
-      target: e.target,
-      type: 'animated',
-      label: e.label || e.condition,
-      animated: true,
-      markerEnd: {
-        type: MarkerType.ArrowClosed,
-        width: 15,
-        height: 15,
-        color: '#4f46e5',
-      },
-    }));
+    // Map edges — guard source/target against undefined
+    const flowEdges: Edge[] = graph.edges
+      .filter((e) => e.source && e.target)
+      .map((e, idx) => ({
+        id: `edge-${e.source}-${e.target}-${idx}`,
+        source: e.source,
+        target: e.target,
+        type: 'animated',
+        label: e.label || e.condition,
+        animated: true,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 15,
+          height: 15,
+          color: '#4f46e5',
+        },
+      }));
 
     setNodes(flowNodes);
     setEdges(flowEdges);
@@ -165,10 +186,10 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({ graph, selectedNodeId, o
           showFitView={true} 
           showInteractive={false} 
           style={{
-            background: 'rgba(15, 10, 25, 0.75)',
-            border: '1px solid rgba(129, 140, 248, 0.2)',
-            borderRadius: '6px',
-            color: '#fff',
+            background: '#ffffff',
+            border: '1.5px solid rgba(99, 102, 241, 0.15)',
+            borderRadius: '10px',
+            boxShadow: '0 2px 12px rgba(99,102,241,0.1)',
             display: 'flex',
             flexDirection: 'row',
             gap: '2px',
@@ -179,7 +200,7 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({ graph, selectedNodeId, o
           variant={BackgroundVariant.Lines}
           gap={40}
           size={0.8}
-          color="rgba(129, 140, 248, 0.05)"
+          color="rgba(99, 102, 241, 0.07)"
         />
       </ReactFlow>
     </div>

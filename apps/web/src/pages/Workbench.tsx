@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useProjects, NodeDefinition, GraphDefinition } from '../context/ProjectContext';
+import { useProjects } from '../hooks/useProjects';
+import type { NodeDefinition, GraphDefinition } from '../types/project';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FlowCanvas } from '../components/workbench/FlowCanvas';
 import { NodeInspector } from '../components/workbench/NodeInspector';
 import { GitFork, Layers, Info, Save } from 'lucide-react';
 import { ParticleBackground } from '../components/ui/ParticleBackground';
+import { normalizeGraphDefinition } from '../lib/graphUtils';
+import { RobotMascot } from '../components/ui/RobotMascot';
 
 export const Workbench: React.FC = () => {
   const { activeProject, activeArchitecture } = useProjects();
@@ -19,7 +22,8 @@ export const Workbench: React.FC = () => {
   // Sync with loaded architecture on mount/update
   useEffect(() => {
     if (activeArchitecture && activeArchitecture.graph_definition) {
-      setLocalGraph(JSON.parse(JSON.stringify(activeArchitecture.graph_definition)));
+      const normalized = normalizeGraphDefinition(activeArchitecture.graph_definition);
+      setLocalGraph(normalized ? JSON.parse(JSON.stringify(normalized)) : null);
       setSelectedNode(null);
       setHasUnsavedChanges(false);
     }
@@ -76,9 +80,8 @@ export const Workbench: React.FC = () => {
   };
 
   const handleCommit = () => {
-    // In local development, we commit canvas revisions locally
     setHasUnsavedChanges(false);
-    alert('Changes successfully committed to active design draft!');
+    // Local draft only — persistence API not wired yet
   };
 
   return (
@@ -151,7 +154,7 @@ export const Workbench: React.FC = () => {
                 className="commit-changes-btn"
               >
                 <Save size={14} />
-                <span>Save Draft</span>
+                <span>Apply Local Draft</span>
               </motion.button>
             )}
           </div>
@@ -184,6 +187,12 @@ export const Workbench: React.FC = () => {
           )}
         </AnimatePresence>
       </div>
+
+      <RobotMascot
+        mode={selectedNode ? 'working' : 'idle'}
+        message={selectedNode ? `Inspecting: ${selectedNode.name}` : 'Click a node to inspect its directives!'}
+        position="fixed-bl"
+      />
     </div>
   );
 };

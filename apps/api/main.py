@@ -56,12 +56,18 @@ app.include_router(architect.router, prefix="/api/architect", tags=["architect"]
 
 @app.get("/health")
 async def health_check():
+    from app.pipelines.utils import is_groq_configured, is_gemini_configured
     return {
         "status": "ok", 
         "version": "1.0.0", 
         "service": "AgentForge API",
         "env": settings.APP_ENV,
-        "cors_origins": settings.get_cors_origins()
+        "cors_origins": settings.get_cors_origins(),
+        "ai": {
+            "groq_configured": is_groq_configured(),
+            "gemini_configured": is_gemini_configured(),
+            "demo_fallback": settings.ALLOW_DEMO_FALLBACK,
+        },
     }
 
 if __name__ == "__main__":

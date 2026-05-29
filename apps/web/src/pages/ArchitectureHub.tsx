@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useProjects } from '../context/ProjectContext';
+import { useProjects } from '../hooks/useProjects';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DiagramExplorer } from '../components/hub/DiagramExplorer';
@@ -8,6 +8,7 @@ import { CostEstimator } from '../components/hub/CostEstimator';
 import { ExportPanel } from '../components/hub/ExportPanel';
 import { Layers, FileCode, BarChart3, Download, Info } from 'lucide-react';
 import { ParticleBackground } from '../components/ui/ParticleBackground';
+import { RobotMascot } from '../components/ui/RobotMascot';
 
 type HubTab = 'flowchart' | 'code' | 'costing' | 'export';
 
@@ -110,6 +111,17 @@ export const ArchitectureHub: React.FC = () => {
           )}
         </section>
       </main>
+
+      <RobotMascot
+        mode="happy"
+        message={
+          activeTab === 'flowchart' ? 'Your agent flow is visualized!' :
+          activeTab === 'code' ? 'Here\'s your generated LangGraph code!' :
+          activeTab === 'costing' ? 'Reviewing cost estimates...' :
+          'Ready to export your architecture!'
+        }
+        position="fixed-br"
+      />
     </div>
   );
 };

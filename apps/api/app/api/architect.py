@@ -6,9 +6,10 @@ from app.database.connection import get_db
 from app.database.models import User, Project, Architecture, ExportLog
 from app.schemas.architect import ArchitectRequest, ArchitectureResponse, GraphDefinition, CostEstimation, InfraRecommendation
 from app.core.security import get_current_user
-from app.core.redis_client import cache_get, cache_set, make_cache_key
-from app.pipelines.requirements_extractor import extract_requirements
-from app.pipelines.graph_planner import plan_graph_architecture
+from app.core.config import settings
+from app.pipelines.requirements_extractor import extract_requirements, RequirementsExtractionError
+from app.pipelines.graph_planner import plan_graph_architecture, GraphPlanningError
+from app.pipelines.utils import is_groq_configured, normalize_graph_definition
 from app.pipelines.langgraph_codegen import generate_langgraph_code
 from app.pipelines.diagram_generator import generate_mermaid_diagram
 
@@ -65,28 +66,30 @@ async def stream_architecture(
         from app.database.connection import AsyncSessionLocal
         async with AsyncSessionLocal() as local_db:
             try:
+                target_model = payload.target_model or settings.GROQ_MODEL
+                ai_mode = "live" if is_groq_configured() else ("demo" if settings.ALLOW_DEMO_FALLBACK else "unconfigured")
+                yield f"event: phase\ndata: {json.dumps({'phase': 'started', 'message': 'Connecting to Groq...', 'ai_mode': ai_mode, 'model': target_model})}\n\n"
+
                 # Step 1: Requirements Extraction
-                yield f"event: phase\ndata: {json.dumps({'phase': 'extracting', 'message': 'Parsing prompt requirements using Groq...'})}\n\n"
-                await asyncio.sleep(0.5) # Simulating slight layout delay for UI smooth rendering
-                requirements = await extract_requirements(payload.prompt)
+                yield f"event: phase\ndata: {json.dumps({'phase': 'extracting', 'message': 'Parsing prompt requirements using Groq...', 'model': target_model})}\n\n"
+                requirements = await extract_requirements(payload.prompt, model=target_model)
                 yield f"event: phase\ndata: {json.dumps({'phase': 'extracted', 'requirements': requirements})}\n\n"
                 
                 # Step 2: Architecture Graph Planning
-                yield f"event: phase\ndata: {json.dumps({'phase': 'planning', 'message': 'Searching patterns and compiling multi-agent topology...'})}\n\n"
-                await asyncio.sleep(0.5)
-                graph = await plan_graph_architecture(requirements, local_db)
+                yield f"event: phase\ndata: {json.dumps({'phase': 'planning', 'message': 'Searching patterns and compiling multi-agent topology...', 'model': target_model})}\n\n"
+                graph = await plan_graph_architecture(requirements, local_db, model=target_model)
                 yield f"event: phase\ndata: {json.dumps({'phase': 'planned', 'graph': graph})}\n\n"
 
-                # Step 3: Python LangGraph Code Generation
-                yield f"event: phase\ndata: {json.dumps({'phase': 'codegen', 'message': 'Synthesizing standard LangGraph Python code blocks...'})}\n\n"
-                await asyncio.sleep(0.5)
-                code = generate_langgraph_code(graph)
-                yield f"event: phase\ndata: {json.dumps({'phase': 'code_generated', 'code': code})}\n\n"
+                # Steps 3 & 4: Code generation (sync) and Mermaid diagram (async Gemini) — run concurrently
+                yield f"event: phase\ndata: {json.dumps({'phase': 'codegen', 'message': 'Synthesizing LangGraph code and Mermaid diagram concurrently...'})}\n\n"
 
-                # Step 4: Flowchart Diagram Drawing
-                yield f"event: phase\ndata: {json.dumps({'phase': 'visualizing', 'message': 'Creating visual flowchart representations via Gemini...'})}\n\n"
-                await asyncio.sleep(0.5)
-                diagram = await generate_mermaid_diagram(graph)
+                loop = asyncio.get_event_loop()
+                code_future = loop.run_in_executor(None, generate_langgraph_code, graph)
+                diagram_future = generate_mermaid_diagram(graph)
+
+                code, diagram = await asyncio.gather(code_future, diagram_future)
+
+                yield f"event: phase\ndata: {json.dumps({'phase': 'code_generated', 'code': code})}\n\n"
                 yield f"event: phase\ndata: {json.dumps({'phase': 'visualized', 'diagram': diagram})}\n\n"
 
                 # Step 5: Save to Database
@@ -130,6 +133,10 @@ async def stream_architecture(
                 
                 yield f"event: phase\ndata: {json.dumps({'phase': 'completed', 'architecture_id': str(architecture.id), 'version': new_version})}\n\n"
                 
+            except (RequirementsExtractionError, GraphPlanningError) as e:
+                logger.error(f"Architect pipeline error: {e}")
+                await local_db.rollback()
+                yield f"event: error\ndata: {json.dumps({'error': str(e), 'code': 'llm_unavailable'})}\n\n"
             except Exception as e:
                 logger.error(f"Error in SSE stream: {e}", exc_info=True)
                 await local_db.rollback()

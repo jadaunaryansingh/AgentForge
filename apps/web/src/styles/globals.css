@@ -1,6 +1,6 @@
 /* ============================================================
    AgentForge Global Design System
-   Premium AI-Themed Dark Interface
+   Premium Light Theme — Indigo / Violet Brand
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap');
@@ -9,14 +9,14 @@
 /* ── CSS Custom Properties ──────────────────────────────── */
 :root {
 
-  /* Core Colors */
+  /* Core Light Surfaces */
   --black: #000000;
-  --surface-0: #050508;
-  --surface-1: #0a0a12;
-  --surface-2: #0f0f1a;
-  --surface-3: #141422;
-  --surface-4: #1a1a2e;
-  --surface-5: #1f1f38;
+  --surface-0: #f8f9ff;
+  --surface-1: #f1f4ff;
+  --surface-2: #ffffff;
+  --surface-3: #eef1fb;
+  --surface-4: #e6eaf8;
+  --surface-5: #dde3f5;
 
   /* Brand Gradients */
   --grad-primary: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
@@ -24,7 +24,8 @@
   --grad-aurora: linear-gradient(135deg, #06b6d4, #3b82f6, #8b5cf6, #ec4899);
   --grad-glow: linear-gradient(135deg, #4f46e5, #7c3aed);
   --grad-neon: linear-gradient(90deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
-  --grad-text: linear-gradient(135deg, #e2e8f0, #94a3b8);
+  --grad-text: linear-gradient(135deg, #1e1b4b, #3730a3);
+  --grad-bg: linear-gradient(160deg, #f8f9ff 0%, #f0f4ff 50%, #f5f0ff 100%);
 
   /* Brand Colors */
   --primary: #6366f1;
@@ -38,33 +39,34 @@
   --yellow: #f59e0b;
   --red: #ef4444;
 
-  /* Text */
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #475569;
-  --text-disabled: #334155;
+  /* Text — Dark on light */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-disabled: #cbd5e1;
 
   /* Borders */
-  --border-subtle: rgba(148, 163, 184, 0.08);
-  --border-default: rgba(148, 163, 184, 0.12);
-  --border-strong: rgba(148, 163, 184, 0.2);
-  --border-primary: rgba(99, 102, 241, 0.3);
-  --border-glow: rgba(99, 102, 241, 0.5);
+  --border-subtle: rgba(99, 102, 241, 0.07);
+  --border-default: rgba(99, 102, 241, 0.12);
+  --border-strong: rgba(99, 102, 241, 0.22);
+  --border-primary: rgba(99, 102, 241, 0.35);
+  --border-glow: rgba(99, 102, 241, 0.55);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.25);
-  --shadow-glow-lg: 0 0 60px rgba(99, 102, 241, 0.2);
-  --shadow-accent: 0 0 30px rgba(168, 85, 247, 0.2);
-  --shadow-cyan: 0 0 30px rgba(6, 182, 212, 0.15);
+  /* Shadows — lighter, softer */
+  --shadow-sm: 0 1px 4px rgba(99, 102, 241, 0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(99, 102, 241, 0.1), 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-lg: 0 8px 32px rgba(99, 102, 241, 0.14), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-glow: 0 0 24px rgba(99, 102, 241, 0.18);
+  --shadow-glow-lg: 0 0 48px rgba(99, 102, 241, 0.14);
+  --shadow-accent: 0 0 24px rgba(168, 85, 247, 0.15);
+  --shadow-cyan: 0 0 24px rgba(6, 182, 212, 0.12);
+  --shadow-card: 0 2px 12px rgba(99, 102, 241, 0.08), 0 1px 4px rgba(0,0,0,0.04);
 
-  /* Glass */
-  --glass-bg: rgba(15, 15, 26, 0.7);
-  --glass-bg-light: rgba(26, 26, 46, 0.5);
-  --glass-bg-dark: rgba(5, 5, 8, 0.85);
-  --glass-border: rgba(148, 163, 184, 0.1);
+  /* Glass — white glass */
+  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-bg-light: rgba(255, 255, 255, 0.5);
+  --glass-bg-dark: rgba(248, 249, 255, 0.85);
+  --glass-border: rgba(99, 102, 241, 0.12);
   --glass-blur: blur(20px);
   --glass-blur-sm: blur(10px);
 
@@ -138,11 +140,13 @@ html {
 
 body {
   font-family: var(--font-sans);
-  background-color: var(--surface-0);
+  background: var(--grad-bg);
+  background-attachment: fixed;
   color: var(--text-primary);
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1.6;
+  color-scheme: light; /* Prevent browser dark mode on native elements */
 }
 
 #root {
@@ -151,16 +155,99 @@ body {
   flex-direction: column;
 }
 
+/* ── Native Form Element Light Theme Fixes ──────────────── */
+input, textarea, select, button {
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  color-scheme: light;
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+}
+
+select option {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+/* ── ReactFlow / XYFlow Light Theme Overrides ───────────── */
+.react-flow,
+.react-flow__renderer,
+.react-flow__container {
+  background: transparent !important;
+}
+
+.react-flow__background {
+  background: var(--surface-1) !important;
+}
+
+.react-flow__edge-path {
+  stroke: var(--primary) !important;
+  stroke-opacity: 0.6;
+}
+
+.react-flow__edge-path:hover {
+  stroke-opacity: 1;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--accent) !important;
+  stroke-opacity: 1;
+}
+
+.react-flow__handle {
+  background: var(--primary) !important;
+  border: 2px solid var(--surface-2) !important;
+  box-shadow: 0 0 0 1.5px var(--primary);
+}
+
+.react-flow__controls {
+  background: var(--surface-2) !important;
+  border: 1.5px solid var(--border-default) !important;
+  box-shadow: var(--shadow-md) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+.react-flow__controls-button {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-default) !important;
+  color: var(--text-secondary) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--surface-3) !important;
+  color: var(--text-primary) !important;
+}
+
+.react-flow__controls-button svg {
+  fill: var(--text-secondary) !important;
+}
+
+.react-flow__minimap {
+  background: var(--surface-2) !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+.react-flow__attribution {
+  background: transparent !important;
+  color: var(--text-muted) !important;
+}
+
+
+
 /* ── Scrollbar ──────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: var(--surface-1);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: rgba(99, 102, 241, 0.2);
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -183,8 +270,8 @@ h5 { font-size: var(--text-xl); }
 h6 { font-size: var(--text-lg); }
 
 p { color: var(--text-secondary); line-height: 1.7; }
-a { color: var(--primary-light); text-decoration: none; }
-a:hover { color: var(--accent-light); }
+a { color: var(--primary); text-decoration: none; }
+a:hover { color: var(--accent); }
 
 code, pre {
   font-family: var(--font-mono);
@@ -248,15 +335,15 @@ code, pre {
 .glow-cyan { box-shadow: var(--shadow-cyan); }
 .glow-lg { box-shadow: var(--shadow-glow-lg); }
 
-/* ── Glow Border Animation ──────────────────────────────── */
+/* ── Animations ─────────────────────────────────────────── */
 @keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.2), inset 0 0 20px rgba(99, 102, 241, 0.05); }
-  50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.4), inset 0 0 30px rgba(99, 102, 241, 0.1); }
+  0%, 100% { box-shadow: 0 0 16px rgba(99, 102, 241, 0.15), inset 0 0 16px rgba(99, 102, 241, 0.04); }
+  50% { box-shadow: 0 0 32px rgba(99, 102, 241, 0.3), inset 0 0 24px rgba(99, 102, 241, 0.08); }
 }
 
 @keyframes borderGlow {
-  0%, 100% { border-color: rgba(99, 102, 241, 0.2); }
-  50% { border-color: rgba(99, 102, 241, 0.6); }
+  0%, 100% { border-color: rgba(99, 102, 241, 0.15); }
+  50% { border-color: rgba(99, 102, 241, 0.5); }
 }
 
 @keyframes shimmer {
@@ -321,10 +408,10 @@ code, pre {
   background: var(--grad-primary);
 }
 .bg-gradient-mesh {
-  background: 
-    radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 60%),
+  background:
+    radial-gradient(ellipse at 10% 20%, rgba(99, 102, 241, 0.07) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.03) 0%, transparent 60%),
     var(--surface-0);
 }
 
@@ -359,7 +446,7 @@ code, pre {
 }
 
 .btn:hover::before {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .btn:active {
@@ -369,23 +456,25 @@ code, pre {
 .btn-primary {
   background: var(--grad-primary);
   color: white;
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.35);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 0 30px rgba(99, 102, 241, 0.5), 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 24px rgba(99, 102, 241, 0.5), 0 2px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
 }
 
 .btn-secondary {
-  background: var(--surface-3);
+  background: var(--surface-2);
   color: var(--text-primary);
-  border: 1px solid var(--border-default);
+  border: 1.5px solid var(--border-default);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-secondary:hover {
-  background: var(--surface-4);
+  background: var(--surface-1);
   border-color: var(--border-primary);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-ghost {
@@ -412,15 +501,16 @@ code, pre {
 /* ── Cards ──────────────────────────────────────────────── */
 .card {
   background: var(--surface-2);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
   padding: var(--space-6);
+  box-shadow: var(--shadow-card);
   transition: all var(--duration-base) var(--ease-smooth);
 }
 
 .card:hover {
   border-color: var(--border-primary);
-  box-shadow: var(--shadow-glow);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
   transform: translateY(-2px);
 }
 
@@ -430,19 +520,20 @@ code, pre {
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
   transition: all var(--duration-base) var(--ease-smooth);
 }
 
 .card-glass:hover {
   border-color: var(--border-primary);
-  box-shadow: var(--shadow-glow);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
 }
 
 /* ── Input ──────────────────────────────────────────────── */
 .input {
   width: 100%;
   background: var(--surface-2);
-  border: 1px solid var(--border-default);
+  border: 1.5px solid var(--border-default);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-family: var(--font-sans);
@@ -450,13 +541,14 @@ code, pre {
   padding: var(--space-3) var(--space-4);
   outline: none;
   transition: all var(--duration-base) var(--ease-smooth);
+  box-shadow: var(--shadow-sm);
 }
 
 .input::placeholder { color: var(--text-muted); }
 .input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), var(--shadow-glow);
-  background: var(--surface-3);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12), var(--shadow-sm);
+  background: var(--surface-2);
 }
 
 .textarea {
@@ -478,32 +570,32 @@ code, pre {
 }
 
 .badge-primary {
-  background: rgba(99, 102, 241, 0.15);
-  color: var(--primary-light);
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary-dark);
   border: 1px solid rgba(99, 102, 241, 0.2);
 }
 
 .badge-accent {
-  background: rgba(168, 85, 247, 0.15);
-  color: var(--accent-light);
+  background: rgba(168, 85, 247, 0.1);
+  color: #7e22ce;
   border: 1px solid rgba(168, 85, 247, 0.2);
 }
 
 .badge-cyan {
-  background: rgba(6, 182, 212, 0.12);
-  color: #22d3ee;
+  background: rgba(6, 182, 212, 0.1);
+  color: #0e7490;
   border: 1px solid rgba(6, 182, 212, 0.2);
 }
 
 .badge-green {
-  background: rgba(16, 185, 129, 0.12);
-  color: #34d399;
+  background: rgba(16, 185, 129, 0.1);
+  color: #065f46;
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .badge-yellow {
-  background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.1);
+  color: #92400e;
   border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
@@ -540,7 +632,7 @@ code, pre {
 .animate-float { animation: float 4s ease-in-out infinite; }
 .animate-pulse-glow { animation: glowPulse 3s ease-in-out infinite; }
 .animate-shimmer {
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.04) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(99,102,241,0.06) 50%, transparent 100%);
   background-size: 200% auto;
   animation: shimmer 2s linear infinite;
 }
@@ -553,7 +645,7 @@ code, pre {
 
 /* ── Loading States ─────────────────────────────────────── */
 .skeleton {
-  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background: linear-gradient(90deg, var(--surface-3) 25%, var(--surface-4) 50%, var(--surface-3) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: var(--radius-md);
@@ -597,7 +689,7 @@ code, pre {
   background: linear-gradient(
     45deg,
     transparent 30%,
-    rgba(255, 255, 255, 0.04) 50%,
+    rgba(255, 255, 255, 0.15) 50%,
     transparent 70%
   );
   transform: translateX(-100%) rotate(45deg);
@@ -619,7 +711,7 @@ code, pre {
   bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--surface-5);
+  background: var(--surface-2);
   border: 1px solid var(--border-default);
   color: var(--text-primary);
   padding: 6px 10px;
@@ -630,6 +722,7 @@ code, pre {
   opacity: 0;
   transition: opacity var(--duration-fast);
   z-index: 100;
+  box-shadow: var(--shadow-md);
 }
 
 [data-tooltip]:hover::after {
@@ -655,4 +748,24 @@ code, pre {
   .page-main {
     padding: var(--space-4);
   }
+}
+
+/* ── Global Loader ──────────────────────────────────────── */
+.global-loader-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  background: var(--grad-bg);
+}
+
+.glow-loading-orb {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--grad-primary);
+  box-shadow: 0 0 32px rgba(99, 102, 241, 0.5);
+  animation: glowPulse 1.5s ease-in-out infinite;
 }

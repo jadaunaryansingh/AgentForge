@@ -20,22 +20,46 @@ mermaid.initialize({
 
 const sanitizeMermaidCode = (code: string): string => {
   if (!code) return '';
-  return code
-    .split('\n')
-    .map(line => {
-      const trimmed = line.trim();
-      // Fix class declarations with comma-spaces (e.g. class START, END style;)
-      if (trimmed.startsWith('class ') && !trimmed.startsWith('classDef ')) {
-        const parts = trimmed.split(/\s+/);
-        if (parts.length >= 3) {
-          const className = parts[parts.length - 1];
-          const nodesStr = parts.slice(1, parts.length - 1).join('');
-          return `    class ${nodesStr} ${className}`;
-        }
+  const lines: string[] = [];
+
+  for (const line of code.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // Drop invalid multi-node class lines (common Gemini output bug)
+    if (trimmed.startsWith('class ') && !trimmed.startsWith('classDef ') && trimmed.includes(',')) {
+      const parts = trimmed.split(/\s+/);
+      const className = parts[parts.length - 1]?.replace(';', '');
+      const nodes = trimmed
+        .replace(/^class\s+/, '')
+        .replace(new RegExp(`\\s+${className};?$`), '')
+        .split(',')
+        .map((n) => n.trim())
+        .filter(Boolean);
+      for (const node of nodes) {
+        lines.push(`    class ${node} ${className}`);
       }
-      return line;
-    })
-    .join('\n');
+      continue;
+    }
+
+    if (trimmed.startsWith('class ') && !trimmed.startsWith('classDef ')) {
+      const parts = trimmed.split(/\s+/);
+      if (parts.length >= 3) {
+        const className = parts[parts.length - 1].replace(';', '');
+        const nodesStr = parts.slice(1, parts.length - 1).join('');
+        lines.push(`    class ${nodesStr} ${className}`);
+        continue;
+      }
+    }
+
+    lines.push(line);
+  }
+
+  let result = lines.join('\n').trim();
+  if (result && !result.startsWith('flowchart') && !result.startsWith('graph')) {
+    result = `flowchart LR\n${result}`;
+  }
+  return result;
 };
 
 export const DiagramExplorer: React.FC<DiagramExplorerProps> = ({ mermaidCode }) => {
@@ -46,39 +70,44 @@ export const DiagramExplorer: React.FC<DiagramExplorerProps> = ({ mermaidCode })
   useEffect(() => {
     if (!mermaidCode) return;
 
+    let isCancelled = false;
+
     const renderDiagram = async () => {
       setRenderError(null);
       setSvgHtml('');
       try {
-        if (!containerRef.current) return;
-        
-        // 1. Sanitize code
         const sanitizedCode = sanitizeMermaidCode(mermaidCode);
+        if (!sanitizedCode) return;
 
-        // 2. Clear old contents and create new mermaid element
-        containerRef.current.innerHTML = '';
-        const child = document.createElement('div');
-        child.className = 'mermaid';
-        child.textContent = sanitizedCode.trim();
-        containerRef.current.appendChild(child);
+        // Use mermaid.render() — returns SVG as a string without touching the live DOM.
+        // This avoids the querySelector crash caused by mermaid.run() mutating a DOM
+        // node that React may have unmounted between the call and its internal async work.
+        const renderId = `mermaid-render-${Date.now()}`;
+        const { svg } = await mermaid.render(renderId, sanitizedCode);
 
-        // 3. Render using Mermaid DOM runner
-        await mermaid.run({
-          nodes: [child]
-        });
+        if (isCancelled) return;
 
-        // 4. Capture outerHTML for SVG download compatibility
-        const svgElement = containerRef.current.querySelector('svg');
-        if (svgElement) {
-          setSvgHtml(svgElement.outerHTML);
+        setSvgHtml(svg);
+
+        // Inject into the container only after we have the final SVG string
+        if (containerRef.current) {
+          containerRef.current.innerHTML = svg;
         }
-      } catch (err: any) {
-        console.error("Mermaid parsing error:", err);
-        setRenderError(err.message || 'Failed to render flowchart structure');
+      } catch (err: unknown) {
+        if (isCancelled) return;
+        const message =
+          err && typeof err === 'object' && 'message' in err
+            ? String((err as { message?: string }).message)
+            : 'Failed to render flowchart structure';
+        setRenderError(message);
       }
     };
 
     renderDiagram();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [mermaidCode]);
 
   const handleDownloadSvg = () => {

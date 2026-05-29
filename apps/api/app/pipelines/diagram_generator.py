@@ -5,6 +5,16 @@ import logging
 
 logger = logging.getLogger("agentforge.diagrams")
 
+# Cache the configured Gemini model to avoid re-initialization on each call
+_gemini_model = None
+
+def get_gemini_model():
+    global _gemini_model
+    if _gemini_model is None:
+        genai.configure(api_key=settings.GEMINI_API_KEY)
+        _gemini_model = genai.GenerativeModel(settings.GEMINI_MODEL)
+    return _gemini_model
+
 def generate_mermaid_programmatic(graph: dict) -> str:
     """Fallback generator to compile a styled Mermaid diagram directly from the JSON."""
     nodes = graph.get("nodes", [])
@@ -152,9 +162,7 @@ CRITICAL PROMPT GUIDELINES FOR MERMAID:
 Return ONLY the Mermaid code block. Do NOT surround it in markdown tags or comments. Just the raw code starting with 'flowchart LR'."""
 
     try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        model = genai.GenerativeModel(settings.GEMINI_MODEL)
-        
+        model = get_gemini_model()
         response = await model.generate_content_async(prompt)
         text = response.text
         

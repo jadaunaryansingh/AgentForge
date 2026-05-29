@@ -35,6 +35,8 @@ class Settings(BaseSettings):
 
     # App
     APP_ENV: str = "development"
+    # When true, missing/invalid LLM keys return static demo payloads instead of errors
+    ALLOW_DEMO_FALLBACK: bool = False
     CORS_ORIGINS: Union[str, List[str]] = [
         "http://localhost:3000",
         "http://localhost:5173",

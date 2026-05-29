@@ -23,16 +23,19 @@ export const ParticleBackground: React.FC = () => {
       color: string;
     }> = [];
 
-    // Initialize particles
-    const particleCount = Math.min(60, Math.floor((width * height) / 25000));
+    // Light-theme particles: soft indigo/violet dots at very low opacity
+    const particleCount = Math.min(50, Math.floor((width * height) / 28000));
     for (let i = 0; i < particleCount; i++) {
+      const hue = 230 + Math.random() * 60; // indigo-violet range
+      const lightness = 50 + Math.random() * 25;
+      const alpha = Math.random() * 0.15 + 0.05;
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        size: Math.random() * 2 + 1,
-        color: `hsla(${220 + Math.random() * 40}, 85%, 70%, ${Math.random() * 0.3 + 0.1})`,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        size: Math.random() * 2.5 + 0.8,
+        color: `hsla(${hue}, 65%, ${lightness}%, ${alpha})`,
       });
     }
 
@@ -43,11 +46,7 @@ export const ParticleBackground: React.FC = () => {
       mouse.y = e.clientY;
       mouse.active = true;
     };
-
-    const handleMouseLeave = () => {
-      mouse.active = false;
-    };
-
+    const handleMouseLeave = () => { mouse.active = false; };
     const handleResize = () => {
       if (!canvas) return;
       width = canvas.width = window.innerWidth;
@@ -60,46 +59,36 @@ export const ParticleBackground: React.FC = () => {
 
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
-      
-      // Draw grid overlay
-      ctx.strokeStyle = 'rgba(99, 102, 241, 0.03)';
-      ctx.lineWidth = 1;
-      const gridSize = 45;
+
+      // Very subtle grid — barely visible on light backgrounds
+      ctx.strokeStyle = 'rgba(99, 102, 241, 0.035)';
+      ctx.lineWidth = 0.5;
+      const gridSize = 52;
       for (let x = 0; x < width; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
       }
       for (let y = 0; y < height; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
       }
 
-      // Update and draw particles
       particles.forEach((p, idx) => {
         p.x += p.vx;
         p.y += p.vy;
-
-        // Bounce bounds
         if (p.x < 0 || p.x > width) p.vx *= -1;
         if (p.y < 0 || p.y > height) p.vy *= -1;
 
-        // Draw particle
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = p.color;
         ctx.fill();
 
-        // Draw connectors if close
+        // Connectors — very faint
         for (let j = idx + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
-          if (dist < 120) {
-            const alpha = (1 - dist / 120) * 0.08;
-            ctx.strokeStyle = `rgba(129, 140, 248, ${alpha})`;
+          if (dist < 100) {
+            const alpha = (1 - dist / 100) * 0.045;
+            ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
             ctx.lineWidth = 0.5;
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
@@ -108,14 +97,13 @@ export const ParticleBackground: React.FC = () => {
           }
         }
 
-        // Interact with mouse
         if (mouse.active) {
           const mDist = Math.hypot(p.x - mouse.x, p.y - mouse.y);
-          if (mDist < 180) {
-            const force = (180 - mDist) / 180;
+          if (mDist < 140) {
+            const force = (140 - mDist) / 140;
             const angle = Math.atan2(p.y - mouse.y, p.x - mouse.x);
-            p.x += Math.cos(angle) * force * 0.8;
-            p.y += Math.sin(angle) * force * 0.8;
+            p.x += Math.cos(angle) * force * 0.55;
+            p.y += Math.sin(angle) * force * 0.55;
           }
         }
       });
@@ -144,8 +132,7 @@ export const ParticleBackground: React.FC = () => {
         height: '100vh',
         zIndex: -1,
         pointerEvents: 'none',
-        background: 'radial-gradient(circle at 50% 50%, #03001e 0%, #7303c0 50%, #ec38bc 100%)',
-        opacity: 0.15,
+        // No background color — body gradient shows through cleanly
       }}
     />
   );

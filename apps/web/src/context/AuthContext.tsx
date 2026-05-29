@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { getApiBase } from '../lib/api';
+import { isLocalAppToken } from '../lib/jwt';
 
 interface User {
   id: string;
@@ -22,8 +24,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Set default axios base URL to match the backend FastAPI server
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Empty base uses Vite dev proxy (/api -> localhost:8000). Set VITE_API_URL for production.
+axios.defaults.baseURL = getApiBase();
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -35,18 +37,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const initializeAuth = async () => {
       const storedToken = localStorage.getItem('agentforge_token');
       if (storedToken) {
-        try {
-          setToken(storedToken);
-          axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-          const res = await axios.get('/api/auth/me');
-          setUser(res.data);
-        } catch (err) {
-          console.error("Session restoration failed:", err);
-          // Clean up bad token
+        // Drop legacy Neon/browser tokens before hitting the API (prevents 401 noise)
+        if (!isLocalAppToken(storedToken)) {
           localStorage.removeItem('agentforge_token');
-          delete axios.defaults.headers.common['Authorization'];
-          setToken(null);
-          setUser(null);
+        } else {
+          try {
+            setToken(storedToken);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+            const res = await axios.get('/api/auth/me');
+            setUser(res.data);
+          } catch {
+            localStorage.removeItem('agentforge_token');
+            delete axios.defaults.headers.common['Authorization'];
+            setToken(null);
+            setUser(null);
+          }
         }
       }
       setIsLoading(false);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useProjects } from '../../context/ProjectContext';
+import { useProjects } from '../../hooks/useProjects';
 import { Layers, FolderKanban, History } from 'lucide-react';
 
 export const TopBar: React.FC = () => {

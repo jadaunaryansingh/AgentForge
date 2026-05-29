@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useProjects } from '../../context/ProjectContext';
+import { useProjects } from '../../hooks/useProjects';
 import { LayoutDashboard, Compass, GitBranch, LogOut, Terminal, Layers } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {

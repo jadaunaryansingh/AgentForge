@@ -49,82 +49,87 @@ async def fetch_jwks(url: str):
 async def verify_token_async(token: str) -> dict:
     """Verifies HS256 local tokens and RS256/HS256 Neon Auth tokens (using JWKS)."""
     try:
-        # Try local JWT verification first
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        return payload
+        # App-issued login/register tokens (always try first)
+        return jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
     except JWTError:
-        # Try Neon JWT
-        neon_secret = settings.NEON_JWT_SECRET
-        if not neon_secret:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Neon Auth JWT secret/URL not configured in environment",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+        pass
 
-        # Case A: NEON_JWT_SECRET is a JWKS endpoint URL (Standard Neon Auth Setup)
-        if neon_secret.startswith("http://") or neon_secret.startswith("https://"):
+    neon_secret = (settings.NEON_JWT_SECRET or "").strip()
+    if not neon_secret or neon_secret.startswith("your_"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired or invalid. Please sign in again with email and password.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    token_header = jwt.get_unverified_header(token)
+    token_alg = token_header.get("alg", "")
+
+    # Case B: symmetric Neon secret (non-URL)
+    if not neon_secret.startswith("http://") and not neon_secret.startswith("https://"):
+        try:
+            return jwt.decode(
+                token,
+                neon_secret,
+                algorithms=["HS256", "RS256"],
+                options={"verify_aud": False},
+            )
+        except JWTError:
+            pass
+
+    # Case A: JWKS URL (Neon Auth)
+    if neon_secret.startswith("http://") or neon_secret.startswith("https://"):
+        kid = token_header.get("kid")
+        if not kid:
+            logger.warning(
+                "Rejected token without 'kid' in header (likely stale browser session). "
+                "Use email/password login for a local app token."
+            )
+        else:
             try:
-                # 1. Fetch public keys
                 jwks = await fetch_jwks(neon_secret)
                 if not jwks:
                     raise JWTError("Unable to retrieve public key set from Neon Auth")
 
-                # 2. Extract Key ID (kid) from token header
-                headers = jwt.get_unverified_header(token)
-                kid = headers.get("kid")
-                if not kid:
-                    raise JWTError("Token header does not contain 'kid' key ID parameter")
-
-                # 3. Find matching key in key set
-                matching_key = None
-                for key in jwks.get("keys", []):
-                    if key.get("kid") == kid:
-                        matching_key = key
-                        break
-
+                matching_key = next(
+                    (key for key in jwks.get("keys", []) if key.get("kid") == kid),
+                    None,
+                )
                 if not matching_key:
                     raise JWTError(f"No public key matching key ID '{kid}' found in JWKS")
 
-                # 4. Construct public key and verify token
                 public_key = jwk.construct(matching_key)
-                payload = jwt.decode(
+                return jwt.decode(
                     token,
                     public_key,
                     algorithms=["RS256", "HS256"],
-                    options={"verify_aud": False}
+                    options={"verify_aud": False},
                 )
-                return payload
             except Exception as e:
-                logger.error(f"Neon Auth JWKS verification check failed: {e}")
-        
-        # Case B: NEON_JWT_SECRET is a raw symmetric key string
-        else:
-            try:
-                payload = jwt.decode(
-                    token,
-                    neon_secret,
-                    algorithms=["HS256", "RS256"],
-                    options={"verify_aud": False}
-                )
-                return payload
-            except JWTError:
-                pass
+                logger.error(f"Neon Auth JWKS verification failed: {e}")
 
-        # Development Fallback: allow unverified decoding in local development
-        if settings.APP_ENV == "development" and (not neon_secret or neon_secret in ["your_neon_jwt_secret_here", ""]):
-            try:
-                logger.warning("Bypassing JWT signature verification (development fallback mode)")
-                payload = jwt.get_unverified_claims(token)
-                return payload
-            except Exception:
-                pass
+    # Development only: unverified claims when Neon is not configured
+    if settings.APP_ENV == "development" and neon_secret in ["your_neon_jwt_secret_here", ""]:
+        try:
+            logger.warning("Development: accepting unverified JWT claims")
+            return jwt.get_unverified_claims(token)
+        except Exception:
+            pass
 
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired authentication token",
-            headers={"WWW-Authenticate": "Bearer"},
+    detail = "Session expired or invalid. Please sign in again with email and password."
+    if token_alg == "HS256":
+        detail = "Session expired or invalid. Sign out, then sign in with email and password."
+    elif not token_header.get("kid"):
+        detail = (
+            "Stored session token is incompatible with this app. "
+            "Sign in again using email and password on the login page."
         )
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail=detail,
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),

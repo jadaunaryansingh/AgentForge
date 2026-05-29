@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useProjects } from '../context/ProjectContext';
+import { useProjects } from '../hooks/useProjects';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Play, Terminal, ArrowRight, Loader, HelpCircle } from 'lucide-react';
+import { Sparkles, Play, Terminal, ArrowRight, Loader, HelpCircle, AlertTriangle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { ParticleBackground } from '../components/ui/ParticleBackground';
+import { RobotMascot } from '../components/ui/RobotMascot';
 
 export const NewProject: React.FC = () => {
   const { activeProject, streamPhase, streamLogs, streamMessage, startArchitectureGeneration, resetStreamState } = useProjects();
@@ -31,7 +33,9 @@ export const NewProject: React.FC = () => {
     
     try {
       await startArchitectureGeneration(prompt, targetModel);
-    } catch (err) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to start generation';
+      toast.error(message);
       console.error(err);
     }
   };
@@ -198,7 +202,12 @@ export const NewProject: React.FC = () => {
 
                       {streamPhase === 'error' && (
                         <div className="console-error-actions">
-                          <p>Compilation aborted due to error. Please verify API keys or try again.</p>
+                          <p className="error-hint-row">
+                            <AlertTriangle size={14} />
+                            <span>
+                              Check that <code>GROQ_API_KEY</code> is set in <code>apps/api/.env</code>, restart the API, and sign in again if you see auth errors.
+                            </span>
+                          </p>
                           <button onClick={resetStreamState} className="retry-stream-btn">
                             Clear Console
                           </button>
@@ -212,6 +221,12 @@ export const NewProject: React.FC = () => {
           </div>
         )}
       </main>
+
+      <RobotMascot
+        mode={isStreaming ? 'thinking' : streamPhase === 'completed' ? 'happy' : streamPhase === 'error' ? 'idle' : 'idle'}
+        message={isStreaming ? 'Designing your agent graph...' : streamPhase === 'completed' ? 'Architecture ready! 🎉' : 'Describe your AI system and I\'ll design it!'}
+        position="fixed-br"
+      />
     </div>
   );
 };

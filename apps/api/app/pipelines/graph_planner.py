@@ -2,11 +2,24 @@ import json
 import logging
 from groq import AsyncGroq
 from app.core.config import settings
+from app.pipelines.utils import is_groq_configured, normalize_graph_definition
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database.models import AgentPattern
 
 logger = logging.getLogger("agentforge.planner")
+
+# Reuse a single client instance to avoid repeated TCP connection setup
+_groq_client: AsyncGroq | None = None
+
+def get_groq_client() -> AsyncGroq:
+    global _groq_client
+    if _groq_client is None:
+        _groq_client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+    return _groq_client
+
+class GraphPlanningError(Exception):
+    """Raised when graph architecture cannot be planned via the LLM."""
 
 SYSTEM_PROMPT = """You are an elite LangGraph Solutions Architect. Given structured project requirements and relevant design patterns, design a highly specific, professional multi-agent graph architecture.
 
@@ -257,20 +270,28 @@ def get_default_fallback_graph(requirements: dict, pattern: dict) -> dict:
         }
     }
 
-async def plan_graph_architecture(requirements: dict, db: AsyncSession) -> dict:
+async def plan_graph_architecture(
+    requirements: dict,
+    db: AsyncSession,
+    model: str | None = None,
+) -> dict:
     # 1. Fetch relevant template context from database patterns
     matched_patterns = await search_patterns(requirements, db)
     pattern_context = matched_patterns[0] if matched_patterns else STATIC_SUPERVISOR_PATTERN
-    
-    # Check if Groq key is configured
-    is_valid_key = settings.GROQ_API_KEY and not settings.GROQ_API_KEY.startswith("your_")
-    
-    if not is_valid_key:
-        logger.warning("Groq API key not configured or is placeholder. Using mock graph planning solver.")
-        return get_default_fallback_graph(requirements, pattern_context)
+    llm_model = model or settings.GROQ_MODEL
+
+    if not is_groq_configured():
+        if settings.ALLOW_DEMO_FALLBACK:
+            logger.warning("Groq API key not configured. Using demo graph (ALLOW_DEMO_FALLBACK=true).")
+            graph = get_default_fallback_graph(requirements, pattern_context)
+            graph["_demo_mode"] = True
+            return normalize_graph_definition(graph)
+        raise GraphPlanningError(
+            "GROQ_API_KEY is missing or still a placeholder. Set a valid key in apps/api/.env and restart the API."
+        )
 
     try:
-        client = AsyncGroq(api_key=settings.GROQ_API_KEY)
+        client = get_groq_client()
         user_prompt_content = f"""Structured Requirements:
 {json.dumps(requirements, indent=2)}
 
@@ -280,7 +301,7 @@ Recommended Base Pattern Template:
 Please design a comprehensive LangGraph multi-agent architecture JSON configuration tailored to these requirements."""
 
         response = await client.chat.completions.create(
-            model=settings.GROQ_MODEL,
+            model=llm_model,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_prompt_content},
@@ -289,7 +310,13 @@ Please design a comprehensive LangGraph multi-agent architecture JSON configurat
             max_tokens=4000,
             response_format={"type": "json_object"},
         )
-        return json.loads(response.choices[0].message.content)
+        graph = json.loads(response.choices[0].message.content)
+        return normalize_graph_definition(graph)
     except Exception as e:
-        logger.error(f"Error in graph planner: {e}. Falling back to default pattern matching.")
-        return get_default_fallback_graph(requirements, pattern_context)
+        logger.error(f"Error in graph planner: {e}")
+        if settings.ALLOW_DEMO_FALLBACK:
+            logger.warning("Falling back to demo graph after Groq error.")
+            graph = get_default_fallback_graph(requirements, pattern_context)
+            graph["_demo_mode"] = True
+            return normalize_graph_definition(graph)
+        raise GraphPlanningError(f"Groq graph planning failed: {e}") from e

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useProjects } from '../context/ProjectContext';
+import { useProjects } from '../hooks/useProjects';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Trash2, FolderKanban, ArrowRight, Sparkles, Database } from 'lucide-react';
 import { ParticleBackground } from '../components/ui/ParticleBackground';
+import { RobotMascot } from '../components/ui/RobotMascot';
 
 export const Dashboard: React.FC = () => {
   const { projects, createProject, deleteProject, selectProject, isProjectsLoading } = useProjects();
@@ -248,6 +249,12 @@ export const Dashboard: React.FC = () => {
           </motion.div>
         </div>
       )}
+
+      <RobotMascot
+        mode={projects.length === 0 ? 'idle' : 'happy'}
+        message={projects.length === 0 ? 'Create your first AI architecture!' : `You have ${totalProjects} project${totalProjects !== 1 ? 's' : ''}. Let's build!`}
+        position="fixed-br"
+      />
     </div>
   );
 };

@@ -22,8 +22,11 @@ export const NodeInspector: React.FC<NodeInspectorProps> = ({ node, onClose, onU
       setName(node.name || node.id || '');
       setDesc(node.description || '');
       setSystemPrompt(node.system_prompt || '');
-      setModel(node.model_config_data?.model || 'llama-3.3-70b-versatile');
-      setTemp(node.model_config_data?.temperature ?? 0.1);
+      const modelConfig =
+        node.model_config_data ||
+        (node as NodeDefinition & { model_config?: { model?: string; temperature?: number } }).model_config;
+      setModel(modelConfig?.model || 'llama-3.3-70b-versatile');
+      setTemp(modelConfig?.temperature ?? 0.1);
       setToolsString(node.tools?.join(', ') || '');
     }
   }, [node]);

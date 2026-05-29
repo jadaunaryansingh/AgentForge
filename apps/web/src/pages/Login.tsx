@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal, Shield, Lock, Mail, User, Eye, EyeOff, Clock } from 'lucide-react';
 import { ParticleBackground } from '../components/ui/ParticleBackground';
+import { RobotMascot } from '../components/ui/RobotMascot';
 import axios from 'axios';
 
 export const Login: React.FC = () => {
@@ -19,6 +20,7 @@ export const Login: React.FC = () => {
 
   // Health check & Latency states
   const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [groqReady, setGroqReady] = useState<boolean | null>(null);
   const [latency, setLatency] = useState<number | null>(null);
   const [currentTime, setCurrentTime] = useState<string>('');
 
@@ -33,6 +35,7 @@ export const Login: React.FC = () => {
           const endTime = performance.now();
           setLatency(Math.round(endTime - startTime));
           setBackendStatus('online');
+          setGroqReady(Boolean(res.data?.ai?.groq_configured));
         }
       } catch (err) {
         if (active) {
@@ -228,7 +231,11 @@ export const Login: React.FC = () => {
               </span>
               <span className="status-subtitle">
                 {backendStatus === 'checking' && 'Pinging local host...'}
-                {backendStatus === 'online' && `Response: ${latency}ms`}
+                {backendStatus === 'online' && (
+                  groqReady
+                    ? `Groq ready · ${latency}ms`
+                    : `API up but GROQ_API_KEY missing · ${latency}ms`
+                )}
                 {backendStatus === 'offline' && 'Verify server execution'}
               </span>
             </div>
@@ -239,6 +246,12 @@ export const Login: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <RobotMascot
+        mode={isLoading ? 'thinking' : isLogin ? 'idle' : 'happy'}
+        message={isLoading ? 'Verifying credentials...' : isLogin ? 'Welcome back, engineer!' : 'Create your account to get started!'}
+        position="fixed-br"
+      />
     </div>
   );
 };
