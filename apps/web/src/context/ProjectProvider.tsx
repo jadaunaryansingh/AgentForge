@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
-import { ProjectContext } from './projectContext';
+import { ProjectContext } from './ProjectContext';
 import { apiUrl, getAuthHeaders, getAuthToken } from '../lib/api';
 import { normalizeArchitecture, normalizeGraphDefinition } from '../lib/graphUtils';
 import { parseSseBlock } from '../lib/sse';

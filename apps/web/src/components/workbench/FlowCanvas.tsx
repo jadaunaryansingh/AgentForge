@@ -63,17 +63,19 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({ graph, selectedNodeId, o
     // Track how many nodes have been placed in each column
     const colRowCount: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
 
-    const assignCol = (n: any, index: number): number => {
+    type RawNode = string | { id?: string; name?: string; type?: string; description?: string; model_config_data?: Record<string, unknown>; model_config?: Record<string, unknown>; tools?: string[] };
+    type RawEdge = { source: string; target: string; label?: string; condition?: string };
+
+    const assignCol = (n: RawNode, index: number): number => {
       const id = typeof n === 'string' ? n : (n.id || '');
       const type = (typeof n === 'string' ? 'agent' : (n.type || 'agent')).toLowerCase();
       if (id === graph.entry_point || type === 'input') return 0;
       if (type === 'output') return 4;
       if (type === 'tool') return 3;
-      // Alternate primary vs secondary lane for agents/routers
       return index % 2 === 0 ? 1 : 2;
     };
 
-    const flowNodes: Node[] = graph.nodes.map((n: any, index: number) => {
+    const flowNodes: Node[] = (graph.nodes as RawNode[]).map((n: RawNode, index: number) => {
       const id = typeof n === 'string' ? n : (n.id || `node-${index}`);
       const name = typeof n === 'string' ? n : (n.name || n.id || `Node ${index}`);
       const type = (typeof n === 'string' ? 'agent' : (n.type || 'agent')).toLowerCase();
@@ -132,9 +134,9 @@ export const FlowCanvas: React.FC<FlowCanvasProps> = ({ graph, selectedNodeId, o
     }
 
     // Map edges — guard source/target against undefined
-    const flowEdges: Edge[] = graph.edges
-      .filter((e) => e.source && e.target)
-      .map((e, idx) => ({
+    const flowEdges: Edge[] = (graph.edges as RawEdge[])
+      .filter((e: RawEdge) => e.source && e.target)
+      .map((e: RawEdge, idx: number) => ({
         id: `edge-${e.source}-${e.target}-${idx}`,
         source: e.source,
         target: e.target,
