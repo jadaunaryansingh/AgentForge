@@ -1,0 +1,6 @@
+/* Netlify redirects — SPA fallback so React Router works */
+/*  All routes → index.html  */
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

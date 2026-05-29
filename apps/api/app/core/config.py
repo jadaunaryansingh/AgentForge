@@ -40,9 +40,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: Union[str, List[str]] = [
         "http://localhost:3000",
         "http://localhost:5173",
+        "https://agentforge.netlify.app",
         "https://agentforge.vercel.app",
         "https://agentforge.app",
-        "https://web-silk-six-36.vercel.app",
     ]
 
     def get_cors_origins(self) -> List[str]:
