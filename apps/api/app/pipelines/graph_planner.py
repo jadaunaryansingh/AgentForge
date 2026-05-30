@@ -2,7 +2,7 @@ import json
 import logging
 from groq import AsyncGroq
 from app.core.config import settings
-from app.pipelines.utils import is_groq_configured, normalize_graph_definition
+from app.pipelines.utils import is_groq_configured, is_gemini_configured, normalize_graph_definition
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database.models import AgentPattern
@@ -278,21 +278,13 @@ async def plan_graph_architecture(
     # 1. Fetch relevant template context from database patterns
     matched_patterns = await search_patterns(requirements, db)
     pattern_context = matched_patterns[0] if matched_patterns else STATIC_SUPERVISOR_PATTERN
-    llm_model = model or settings.GROQ_MODEL
 
-    if not is_groq_configured():
-        if settings.ALLOW_DEMO_FALLBACK:
-            logger.warning("Groq API key not configured. Using demo graph (ALLOW_DEMO_FALLBACK=true).")
-            graph = get_default_fallback_graph(requirements, pattern_context)
-            graph["_demo_mode"] = True
-            return normalize_graph_definition(graph)
-        raise GraphPlanningError(
-            "GROQ_API_KEY is missing or still a placeholder. Set a valid key in apps/api/.env and restart the API."
-        )
-
-    try:
-        client = get_groq_client()
-        user_prompt_content = f"""Structured Requirements:
+    # 2. Try Groq if configured
+    if is_groq_configured():
+        try:
+            llm_model = model or settings.GROQ_MODEL
+            client = get_groq_client()
+            user_prompt_content = f"""Structured Requirements:
 {json.dumps(requirements, indent=2)}
 
 Recommended Base Pattern Template:
@@ -300,23 +292,67 @@ Recommended Base Pattern Template:
 
 Please design a comprehensive LangGraph multi-agent architecture JSON configuration tailored to these requirements."""
 
-        response = await client.chat.completions.create(
-            model=llm_model,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_prompt_content},
-            ],
-            temperature=0.3,
-            max_tokens=4000,
-            response_format={"type": "json_object"},
-        )
-        graph = json.loads(response.choices[0].message.content)
-        return normalize_graph_definition(graph)
-    except Exception as e:
-        logger.error(f"Error in graph planner: {e}")
-        if settings.ALLOW_DEMO_FALLBACK:
-            logger.warning("Falling back to demo graph after Groq error.")
-            graph = get_default_fallback_graph(requirements, pattern_context)
-            graph["_demo_mode"] = True
+            response = await client.chat.completions.create(
+                model=llm_model,
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": user_prompt_content},
+                ],
+                temperature=0.3,
+                max_tokens=4000,
+                response_format={"type": "json_object"},
+            )
+            graph = json.loads(response.choices[0].message.content)
             return normalize_graph_definition(graph)
-        raise GraphPlanningError(f"Groq graph planning failed: {e}") from e
+        except Exception as e:
+            logger.error(f"Error in Groq graph planner: {e}")
+            if not is_gemini_configured():
+                if settings.ALLOW_DEMO_FALLBACK:
+                    logger.warning("Falling back to demo graph after Groq error.")
+                    graph = get_default_fallback_graph(requirements, pattern_context)
+                    graph["_demo_mode"] = True
+                    return normalize_graph_definition(graph)
+                raise GraphPlanningError(f"Groq graph planning failed: {e}") from e
+
+    # 3. Robust fallback to Gemini if configured
+    if is_gemini_configured():
+        try:
+            logger.info("Using Gemini for graph planning...")
+            import google.generativeai as genai
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            gemini_model = genai.GenerativeModel(
+                settings.GEMINI_MODEL,
+                generation_config={"response_mime_type": "application/json"}
+            )
+            user_prompt_content = f"""Structured Requirements:
+{json.dumps(requirements, indent=2)}
+
+Recommended Base Pattern Template:
+{json.dumps(pattern_context, indent=2)}
+
+Please design a comprehensive LangGraph multi-agent architecture JSON configuration tailored to these requirements."""
+
+            response = await gemini_model.generate_content_async(
+                f"{SYSTEM_PROMPT}\n\n{user_prompt_content}"
+            )
+            graph = json.loads(response.text)
+            return normalize_graph_definition(graph)
+        except Exception as e:
+            logger.error(f"Error in Gemini graph planner: {e}")
+            if settings.ALLOW_DEMO_FALLBACK:
+                logger.warning("Falling back to demo graph after Gemini error.")
+                graph = get_default_fallback_graph(requirements, pattern_context)
+                graph["_demo_mode"] = True
+                return normalize_graph_definition(graph)
+            raise GraphPlanningError(f"Gemini graph planning failed: {e}") from e
+
+    # 4. Fallback to demo mode if nothing is configured
+    if settings.ALLOW_DEMO_FALLBACK:
+        logger.warning("No LLM keys configured. Using demo graph.")
+        graph = get_default_fallback_graph(requirements, pattern_context)
+        graph["_demo_mode"] = True
+        return normalize_graph_definition(graph)
+
+    raise GraphPlanningError(
+        "Both GROQ_API_KEY and GEMINI_API_KEY are missing, invalid, or returned errors."
+    )
