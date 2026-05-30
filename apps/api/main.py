@@ -82,7 +82,9 @@ async def cors_middleware(request: Request, call_next):
     # always added even when the server returns 4xx/5xx errors
     try:
         response = await call_next(request)
-    except Exception:
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         response = Response(status_code=500, content=b"Internal Server Error")
 
     # Inject CORS headers on the response regardless of status code

@@ -62,7 +62,14 @@ async def verify_token_async(token: str) -> dict:
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token_header = jwt.get_unverified_header(token)
+    try:
+        token_header = jwt.get_unverified_header(token)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token format.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     token_alg = token_header.get("alg", "")
 
     # Case B: symmetric Neon secret (non-URL)

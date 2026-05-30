@@ -26,19 +26,26 @@ if db_url:
     
     # Clean trailing query symbols or formatting errors
     db_url = db_url.replace("?&", "?").replace("&&", "&").rstrip("?").rstrip("&")
-    
-    # Ensure ssl=require is appended if it's a remote pg server and not present
-    if "ssl=" not in db_url and "sqlite" not in db_url:
-        if "?" in db_url:
-            db_url += "&ssl=require"
-        else:
-            db_url += "?ssl=require"
 else:
     db_url = "sqlite+aiosqlite:///./agentforge.db"
+
+import ssl
+
+connect_args = {}
+if not db_url.startswith("sqlite"):
+    # Strip any ssl query parameters to prevent conflicts with the explicit context
+    db_url = re.sub(r'[?&]ssl(mode)?=[^&]+', '', db_url)
+    db_url = db_url.replace("?&", "?").rstrip("?").rstrip("&")
+    
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    connect_args["ssl"] = ctx
 
 engine = create_async_engine(
     db_url,
     pool_pre_ping=True,
+    connect_args=connect_args,
     # pool_size and max_overflow are only valid for queuepool (not sqlite)
     **({
         "pool_size": 10,
