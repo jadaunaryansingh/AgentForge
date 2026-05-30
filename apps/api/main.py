@@ -105,11 +105,28 @@ app.include_router(architect.router, prefix="/api/architect", tags=["architect"]
 @app.get("/health")
 async def health_check():
     from app.pipelines.utils import is_groq_configured, is_gemini_configured
+    from app.database.connection import engine
+    from sqlalchemy import text
+    
+    db_status = "unknown"
+    db_error = None
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+            db_status = "connected"
+    except Exception as e:
+        db_status = "error"
+        db_error = str(e)
+
     return {
         "status": "ok",
         "version": "1.0.0",
         "service": "AgentForge API",
         "env": settings.APP_ENV,
+        "database": {
+            "status": db_status,
+            "error": db_error
+        },
         "cors_origins": settings.get_cors_origins(),
         "cors_trusted_suffixes": list(_TRUSTED_SUFFIXES),
         "ai": {
