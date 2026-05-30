@@ -78,10 +78,14 @@ async def cors_middleware(request: Request, call_next):
             headers["Access-Control-Allow-Credentials"] = "true"
         return Response(status_code=200, headers=headers)
 
-    # Process actual request
-    response = await call_next(request)
+    # Process actual request — catch exceptions so CORS headers are
+    # always added even when the server returns 4xx/5xx errors
+    try:
+        response = await call_next(request)
+    except Exception:
+        response = Response(status_code=500, content=b"Internal Server Error")
 
-    # Inject CORS headers on the response
+    # Inject CORS headers on the response regardless of status code
     if allowed:
         response.headers["Access-Control-Allow-Origin"] = origin
         response.headers["Access-Control-Allow-Credentials"] = "true"
