@@ -32,4 +32,4 @@ services:
       - key: REDIS_URL
         sync: false
       - key: CORS_ORIGINS
-        value: '["https://agentforge.netlify.app","https://*.netlify.app","https://agentforge.vercel.app","https://*.vercel.app","http://localhost:3000","http://localhost:5173"]'
+        value: '["https://web-git-main-aryansinghjadaun-8216s-projects.vercel.app","https://agentforge-jmw9.onrender.com","https://agentforge.vercel.app","https://agentforge.netlify.app","http://localhost:3000","http://localhost:5173"]'

@@ -43,7 +43,7 @@ origins = settings.get_cors_origins()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"https://.*\.(netlify\.app|vercel\.app)",
+    allow_origin_regex=r"https://[a-zA-Z0-9\-\.]+\.(vercel\.app|netlify\.app)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
